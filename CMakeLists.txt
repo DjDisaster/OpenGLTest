@@ -3,7 +3,17 @@ project(untitled2)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(untitled2 src/main.cpp)
+add_executable(untitled2 src/main.cpp
+        src/Renderer.cpp
+        src/Renderer.h
+        src/VertexBuffer.cpp
+        src/VertexBuffer.h
+        src/IndexBuffer.cpp
+        src/IndexBuffer.h
+        src/VertexArray.cpp
+        src/VertexArray.h
+        src/VertexBufferLayout.cpp
+        src/VertexBufferLayout.h)
 
 find_package(glfw3 3.4 REQUIRED)
 find_package(OpenGL REQUIRED)
