@@ -7,83 +7,54 @@
 #include "Renderer.h"
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
+#include "VertexArray.h"
+#include "Shader.h"
+#include "Texture.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
-struct ShaderProgramSource {
-    std::string VertexSource;
-    std::string FragmentSource;
-};
+glm::vec3 camPos   = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 camUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
-static ShaderProgramSource ParseShader(const std::string& filePath) {
-    std::ifstream stream(filePath);
-    if (!stream.is_open()) {
-        std::cout << "Failed to open shader file: " << filePath << std::endl;
-        return {"", ""};
+float yaw = -90.0f;
+float pitch = 0.0f;
+
+float sensitivity = 0.1f;
+
+bool firstMouse = true;
+double lastX = 960.0 / 2.0;
+double lastY = 540.0 / 2.0;
+
+
+static void MouseCallback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
     }
 
-    enum class ShaderType {
-        NONE = -1,
-        VERTEX = 0,
-        FRAGMENT = 1
-    };
+    float xoffset = (float)(xpos - lastX);
+    float yoffset = (float)(lastY - ypos);
 
-    std::string line;
-    std::stringstream ss[2];
-    ShaderType type = ShaderType::NONE;
-    while (getline(stream, line)) {
-        if (line.find("#shader") != std::string::npos) {
-            if (line.find("vertex") != std::string::npos) {
-                type = ShaderType::VERTEX;
-            }
-            else if (line.find("fragment") != std::string::npos) {
-                type = ShaderType::FRAGMENT;
-            }
-        } else {
-            ss[static_cast<int>(type)] << line << '\n';
-        }
-    }
+    lastX = xpos;
+    lastY = ypos;
 
-    return { ss[0].str(), ss[1].str() };
-}
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
-static unsigned int CompileShader(unsigned int type, const std::string& source) {
-    unsigned int id = glCreateShader(type);
-    const char* src = source.c_str();
+    yaw += xoffset;
+    pitch += yoffset;
 
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
+    if (pitch > 89.0f) pitch = 89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
 
-    int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if (result == GL_FALSE) {
-        int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        char error[length];
-        glGetShaderInfoLog(id, length, &length, error);
-        std::cout << "Failed to compile shader: " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << ": " << error << std::endl;
-        glDeleteShader(id);
-        return 0;
-    }
-
-
-    return id;
-}
-
-static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader) {
-    unsigned int program = glCreateProgram();
-
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    camFront = glm::normalize(front);
 }
 
 int main(void)
@@ -100,7 +71,7 @@ int main(void)
 
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", nullptr, nullptr);
+    window = glfwCreateWindow(1920, 1080, "Hello World", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -110,6 +81,8 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, MouseCallback);
 
     // setup da glew
     if (glewInit() != GLEW_OK) {
@@ -118,58 +91,152 @@ int main(void)
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
+    /*
     float positions[] = {
-         -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f, 0.5f,
-        -0.5f, 0.5f,
+         -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.0f, 0.5f,
     };
 
     unsigned int indices[] = {
         0, 1, 2,
         2, 3, 0
     };
+    */
 
-    unsigned int vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    // <3 AI for generating this shit
+    float positions[] = {
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
 
-    VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
 
-    IndexBuffer ib(indices, 6);
+         0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
 
-    ShaderProgramSource source = ParseShader("../resources/shaders/Basic.shader");
-    unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-    glUseProgram(shader);
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+    };
+
+    unsigned int indices[] = {
+        0,1,2, 2,3,0,
+        4,5,6, 6,7,4,
+        8,9,10, 10,11,8,
+        12,13,14, 14,15,12,
+        16,17,18, 18,19,16,
+        20,21,22, 22,23,20
+    };
 
 
-    int location = glGetUniformLocation(shader, "u_Color");
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
-    float r = 0.0;
-    float inc = 0.01f;
+    VertexArray va;
+    VertexBuffer vb(positions, 24 * 5 * sizeof(float));
+    VertexBufferLayout layout;
+
+    layout.Push<float>(3);
+    layout.Push<float>(2);
+    va.AddBuffer(vb, layout);
+
+    IndexBuffer ib(indices, 36);
+
+    glm::mat4 proj = glm::perspective(
+        glm::radians(45.0f),
+        960.0f / 540.0f,
+        0.1f,
+        100.0f
+    );
+
+
+    Shader shader("../resources/shaders/Basic.shader");
+    shader.Bind();
+
+    Texture texture("../resources/textures/frieren.jpeg");
+    texture.Bind();
+    shader.SetUniform1i("u_Texture", 0);
+    shader.SetUniformMat4f("u_MVP", proj);
+
+    Renderer renderer;
+
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    int frameCount = 0;
+
+    float camSpeed = 2.5f;
+    double lastFrame = glfwGetTime();
+    double lastTime = glfwGetTime();
+
+    while (!glfwWindowShouldClose(window)) {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.Clear();
+        shader.Bind();
 
-        glUniform4f(location, r, 0.3F, 0.8F, 1.0F);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        double currentFrame = glfwGetTime();
+        float deltaTime = (float)(currentFrame - lastFrame);
+        lastFrame = currentFrame;
 
-        if (r > 1.0f || r < 0) { inc = -inc; }
-        r += inc;
+        float velocity = camSpeed * deltaTime;
+
+        glm::vec3 camRight = glm::normalize(glm::cross(camFront, camUp));
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camPos += camFront * velocity;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camPos -= camFront * velocity;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camPos -= camRight * velocity;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camPos += camRight * velocity;
+
+        // optional vertical movement
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camPos += camUp * velocity;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camPos -= camUp * velocity;
+
+        glm::mat4 view = glm::lookAt(camPos, camPos + camFront, camUp);
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f),
+        (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+
+
+        glm::mat4 mvp = proj * view * model;
+        shader.SetUniformMat4f("u_MVP", mvp);
+
+        renderer.draw(va, ib, shader);
+
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
         /* Poll for and process events */
         glfwPollEvents();
-    }
 
-    glDeleteProgram(shader);
+        double currentTime = glfwGetTime();
+        frameCount++;
+
+        if (currentTime - lastTime >= 10.0) {
+            double fps = double(frameCount) / (currentTime - lastTime);
+            std::cout << "FPS: " << fps << std::endl;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+
+    }
 
     glfwTerminate();
     return 0;

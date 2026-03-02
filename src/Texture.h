@@ -6,7 +6,7 @@
 #define UNTITLED2_TEXTURE_H
 #include "Renderer.h"
 
-class texture {
+class Texture {
 private:
     unsigned int m_RendererID;
     std::string m_FilePath;
@@ -14,6 +14,13 @@ private:
     int m_Width, m_Height, m_BPP;
 public:
     Texture(const std::string& path);
+    ~Texture();
+    void Bind(unsigned int slot = 0) const;
+    void UnBind();
+
+    [[nodiscard]] inline int GetWidth() const { return m_Width; }
+    [[nodiscard]] inline int GetHeight() const { return m_Height; }
+
 };
 
 
