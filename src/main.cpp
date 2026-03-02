@@ -14,7 +14,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-glm::vec3 camPos   = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -65,7 +65,7 @@ int main(void)
     if (!glfwInit())
         return -1;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -80,6 +80,8 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    glewExperimental = GL_TRUE;
+
     glfwSwapInterval(1);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, MouseCallback);
@@ -107,35 +109,41 @@ int main(void)
 
     // <3 AI for generating this shit
     float positions[] = {
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
+        // Front (+Z)
+        -0.5f,-0.5f, 0.5f,  0,0,1,  0,0,
+         0.5f,-0.5f, 0.5f,  0,0,1,  1,0,
+         0.5f, 0.5f, 0.5f,  0,0,1,  1,1,
+        -0.5f, 0.5f, 0.5f,  0,0,1,  0,1,
 
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        // Back (-Z)
+        -0.5f,-0.5f,-0.5f,  0,0,-1, 0,0,
+         0.5f,-0.5f,-0.5f,  0,0,-1, 1,0,
+         0.5f, 0.5f,-0.5f,  0,0,-1, 1,1,
+        -0.5f, 0.5f,-0.5f,  0,0,-1, 0,1,
 
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
+        // Left (-X)
+        -0.5f,-0.5f,-0.5f, -1,0,0,  0,0,
+        -0.5f,-0.5f, 0.5f, -1,0,0,  1,0,
+        -0.5f, 0.5f, 0.5f, -1,0,0,  1,1,
+        -0.5f, 0.5f,-0.5f, -1,0,0,  0,1,
 
-         0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        // Right (+X)
+         0.5f,-0.5f,-0.5f,  1,0,0,  0,0,
+         0.5f,-0.5f, 0.5f,  1,0,0,  1,0,
+         0.5f, 0.5f, 0.5f,  1,0,0,  1,1,
+         0.5f, 0.5f,-0.5f,  1,0,0,  0,1,
 
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,
+        // Top (+Y)
+        -0.5f, 0.5f,-0.5f,  0,1,0,  0,0,
+         0.5f, 0.5f,-0.5f,  0,1,0,  1,0,
+         0.5f, 0.5f, 0.5f,  0,1,0,  1,1,
+        -0.5f, 0.5f, 0.5f,  0,1,0,  0,1,
 
-        -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+        // Bottom (-Y)
+        -0.5f,-0.5f,-0.5f,  0,-1,0, 0,0,
+         0.5f,-0.5f,-0.5f,  0,-1,0, 1,0,
+         0.5f,-0.5f, 0.5f,  0,-1,0, 1,1,
+        -0.5f,-0.5f, 0.5f,  0,-1,0, 0,1,
     };
 
     unsigned int indices[] = {
@@ -153,44 +161,59 @@ int main(void)
     glEnable(GL_DEPTH_TEST);
 
     VertexArray va;
-    VertexBuffer vb(positions, 24 * 5 * sizeof(float));
+    VertexBuffer vb(positions, 24 * 8 * sizeof(float));
     VertexBufferLayout layout;
 
     layout.Push<float>(3);
+    layout.Push<float>(3);
     layout.Push<float>(2);
+
     va.AddBuffer(vb, layout);
+
+    float floorVerts[] = {
+        -10.0f, -1.0f, -10.0f,  0,1,0,   0,0,
+         10.0f, -1.0f, -10.0f,  0,1,0,   1,0,
+         10.0f, -1.0f,  10.0f,  0,1,0,   1,1,
+        -10.0f, -1.0f,  10.0f,  0,1,0,   0,1,
+    };
+    unsigned int floorIdx[] = { 0,1,2, 2,3,0 };
+
+    VertexArray floorVA;
+    VertexBuffer floorVB(floorVerts, 4 * 8 * sizeof(float));
+    VertexBufferLayout floorLayout;
+    floorLayout.Push<float>(3);
+    floorLayout.Push<float>(3);
+    floorLayout.Push<float>(2);
+    floorVA.AddBuffer(floorVB, floorLayout);
+    IndexBuffer floorIB(floorIdx, 6);
 
     IndexBuffer ib(indices, 36);
 
     glm::mat4 proj = glm::perspective(
         glm::radians(45.0f),
-        960.0f / 540.0f,
+        1920.0f / 1080.0f,
         0.1f,
         100.0f
     );
 
-
     Shader shader("../resources/shaders/Basic.shader");
-    shader.Bind();
-
     Texture texture("../resources/textures/frieren.jpeg");
-    texture.Bind();
-    shader.SetUniform1i("u_Texture", 0);
-    shader.SetUniformMat4f("u_MVP", proj);
+    Texture white("../resources/textures/gray.png");
+
+
+    shader.Bind();
 
     Renderer renderer;
 
-    /* Loop until the user closes the window */
     int frameCount = 0;
-
     float camSpeed = 2.5f;
     double lastFrame = glfwGetTime();
     double lastTime = glfwGetTime();
 
+    glm::mat4 floorModel = glm::mat4(1.0f);
+
+
     while (!glfwWindowShouldClose(window)) {
-        /* Render here */
-        renderer.Clear();
-        shader.Bind();
 
         double currentFrame = glfwGetTime();
         float deltaTime = (float)(currentFrame - lastFrame);
@@ -204,25 +227,39 @@ int main(void)
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camPos -= camFront * velocity;
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camPos -= camRight * velocity;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camPos += camRight * velocity;
-
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camPos += camUp * velocity;
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camPos -= camUp * velocity;
 
         glm::mat4 view = glm::lookAt(camPos, camPos + camFront, camUp);
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f),
-        (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+        glm::mat4 model = glm::rotate(
+            glm::mat4(1.0f),
+            (float)glfwGetTime(),
+            glm::vec3(0.5f, 1.0f, 0.0f)
+        );
+
+        glViewport(0, 0, 1920, 1080);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+        shader.Bind();
+
+        // cube
         glm::mat4 mvp = proj * view * model;
         shader.SetUniformMat4f("u_MVP", mvp);
 
+        texture.Bind(0);
+        shader.SetUniform1i("u_Texture", 0);
         renderer.draw(va, ib, shader);
 
+        // floor
+        glm::mat4 floorMVP = proj * view * floorModel;
+        shader.SetUniformMat4f("u_MVP", floorMVP);
 
-        /* Swap front and back buffers */
+        white.Bind(0);
+        shader.SetUniform1i("u_Texture", 0);
+        renderer.draw(floorVA, floorIB, shader);
+
         glfwSwapBuffers(window);
-
-        /* Poll for and process events */
         glfwPollEvents();
 
         double currentTime = glfwGetTime();
@@ -234,9 +271,7 @@ int main(void)
             frameCount = 0;
             lastTime = currentTime;
         }
-
     }
-
     glfwTerminate();
     return 0;
 }

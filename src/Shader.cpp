@@ -29,7 +29,9 @@ void Shader::Unbind() const {
     glUseProgram(0);
 }
 
-
+void Shader::SetUniform3f(const std::string &name, float v0, float v1, float v2) {
+    glUniform3f(GetUniformLocation(name), v0, v1, v2);
+}
 void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix) {
     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &matrix[0][0]);
 }

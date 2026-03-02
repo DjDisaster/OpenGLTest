@@ -11,8 +11,8 @@ void Renderer::Clear() const {
 }
 
 void Renderer::draw(const VertexArray &va, const IndexBuffer &ib, const Shader &shader) const {
-    glClear(GL_COLOR_BUFFER_BIT);
     shader.Bind();
+    va.Bind();
     ib.Bind();
     glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr);
 }
