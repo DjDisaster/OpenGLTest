@@ -5,6 +5,7 @@
 #ifndef UNTITLED2_VERTEXARRAY_H
 #define UNTITLED2_VERTEXARRAY_H
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
 
 
 class VertexArray {
