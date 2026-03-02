@@ -205,7 +205,6 @@ int main(void)
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camPos -= camRight * velocity;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camPos += camRight * velocity;
 
-        // optional vertical movement
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camPos += camUp * velocity;
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camPos -= camUp * velocity;
 
